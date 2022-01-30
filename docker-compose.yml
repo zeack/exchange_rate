@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+    app:
+        image: exchange-rate:latest
+        ports:
+            - 3000:3000
+        networks:
+            - backend
+        command: bash entrypoint.sh
+        environment:
+            BANXICO_TOKEN:
+            FIXER_TOKEN:
+            EXCHANGE_RATE_UPDATE_INTERVAL: 60
+            MAX_REQUEST_USAGE: 200
+            APP_ENV: production
+        volumes:
+            - ./:/code
+        deploy:
+            replicas: 1
+        dns: 
+            - 1.1.1.1
+
+    nginx:
+        image: nginx:1.17.9-alpine
+        ports:
+            - 8080:80
+        networks:
+            - backend
+        command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+        volumes:
+            - ./conf:/etc/nginx/conf.d
+            - ./static:/static
+        deploy:
+            replicas: 1
+        dns: 
+            - 1.1.1.1
+
+networks:
+  backend:
