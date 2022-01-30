@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 from os import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -88,13 +89,16 @@ AUTH_USER_MODEL = 'core.User'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': f'{BASE_DIR}/db.sqlite3',
+DATABASE_URL = environ.get('DATABASE_URL', '')
+if DATABASE_URL == '':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': f'{BASE_DIR}/db.sqlite3',
+        }
     }
-}
-
+else:
+    DATABASES = {'default': dj_database_url.config(default=DATABASE_URL)}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
