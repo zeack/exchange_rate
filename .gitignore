@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 *.code-workspace
-static/rest_framework/
+staticfiles/rest_framework/
 .flake8
