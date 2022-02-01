@@ -118,6 +118,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [
         IsAuthenticated,
     ]
+    lookup_field = 'pk'
 
     def get_queryset(self):
         user = self.request.user
@@ -147,7 +148,9 @@ class UserViewSet(viewsets.ModelViewSet):
             ]
 
         return super().get_permissions()
-
+    
+    def get_instance(self):
+        return self.request.user
 
 class ApiKeyViewSet(viewsets.ModelViewSet):
     serializer_class = ApiKeySerializer
@@ -163,11 +166,13 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'destroy':
-            self.permission_classes = [
-                CurrentUserObj,
-            ]
-        elif self.action == 'partial_update' or self.action == 'update':
+        if (
+            self.action == 'create'
+            or self.action == 'destroy'
+            or self.action == 'retrieve'
+            or self.action == 'partial_update'
+            or self.action == 'update'
+        ):
             self.permission_classes = [
                 CurrentUserObj,
             ]

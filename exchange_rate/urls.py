@@ -26,5 +26,5 @@ router.register(r'key', core.ApiKeyViewSet, 'key')
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('rest_framework.urls')),
-    path('latest/', core.ExchageRateView.as_view()),
+    path('latest/', core.ExchageRateView.as_view(), name='latest'),
 ]
