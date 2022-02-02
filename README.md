@@ -6,6 +6,9 @@ Add the ENV variables BANXICO_TOKEN and FIXER_TOKEN to the docker-compose.yml fi
 > docker build . -t exchange-rate:latest
 > docker-compose up
 
+if you run in os with selinux could not run, you can disable or change the selinux 
+permission of the file entrypoint.sh
+
 # how to test
 Install de requirement, add the ENV variables BANXICO_TOKEN and FIXER_TOKEN to 
 the .env file 
