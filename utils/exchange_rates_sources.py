@@ -52,8 +52,12 @@ def get_dof_rate():
 
     if req.ok and req.status_code == 200:
         soup = BeautifulSoup(req.text, 'html.parser')
-        temp_date = soup.find_all('table')[8].find_all('td')[5].text
-        temp_rate = soup.find_all('table')[8].find_all('td')[6].text
+        for i in range(5, 28, 4):
+            temp_date = soup.find_all('table')[8].find_all('td')[i].text
+            temp_rate = soup.find_all('table')[8].find_all('td')[i+1].text
+            if 'N/E' not in temp_rate:
+                break
+
         d = datetime.strptime(
             temp_date.replace('\r\n', '').strip(),
             '%d/%m/%Y',

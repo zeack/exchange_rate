@@ -60,21 +60,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
     def get_percentage_usage(self, obj):
-        today = timezone.now().date()
         if obj.usage is None or obj.usage_end_date is None:
-            obj.usage_end_date = today
-            obj.save(update_fields=['usage_end_date'])
             return 0
         else:
-            if obj.usage_end_date > today:
-                obj.usage_end_date = today
-                obj.save(update_fields=['usage_end_date'])
-                return 0
-            else:
-                if obj.usage < 1:
-                    return 0
-                else:
-                    return (settings.MAX_REQUEST_USAGE * obj.usage) / 100
+            return (obj.usage * 100) / settings.MAX_REQUEST_USAGE
 
     def validate_email(self, value):
         if User.objects.filter(email=value).count() > 0:

@@ -1,8 +1,12 @@
 from json import loads
+from uuid import uuid4
+from datetime import datetime, timedelta
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.shortcuts import reverse
-from uuid import uuid4
+from django.conf import settings
+from django.utils.timezone import utc
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -32,7 +36,16 @@ temp = {
     'username': 'test3',
     'password': 'testing123',
 }
-
+today = datetime.utcnow().replace(tzinfo=utc).date()
+usage_user = {
+    'email': 'usage@testing.com',
+    'first_name': 'usage',
+    'last_name': 'limit',
+    'password': 'testing123',
+    'username': 'usage',
+    'usage': settings.MAX_REQUEST_USAGE + 1,
+    'usage_end_date': today + timedelta(days=31),
+}
 
 class UserTestCase(TestCase):
     def setUp(self):
@@ -306,11 +319,12 @@ class ExchangeRateTestCase(TestCase):
     def setUp(self):
         """Set up"""
         self.user = User.objects.create_user(**user_data)
-        key = ApiKey.objects.create(
+        self.key = ApiKey.objects.create(
             user=self.user,
             name='app',
             api_key=str(uuid4()),
         )
+        self.usage_user = User.objects.create_user(**usage_user)
 
     def test_user_can_get_exchange_rate_login(self):
         """User can get exchange rate login"""
@@ -364,3 +378,46 @@ class ExchangeRateTestCase(TestCase):
             reverse('latest'),
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_cannot_get_exchange_rate_usage_limit(self):
+        """User cannot get exchange rate because use 100% of the usage limit """
+        client = APIClient()
+        client.login(
+            username=usage_user.get('username'),
+            password=usage_user.get('password'),
+        )
+        response = client.get(
+            reverse('latest'),
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_usage_end_date_is_none(self):
+        """User.usage_end_date is none"""
+        user = usage_user.copy()
+        user['usage_end_date'] = None
+        user['username'] = 'usage_end_date'
+        user = User.objects.create_user(**user)
+        self.assertEqual(user.check_usage_limit(), False)
+    
+    def test_user_usage_end_date_reset(self):
+        """User usage_end_date reset """
+        user = usage_user.copy()
+        user['usage_end_date'] = user['usage_end_date'] - timedelta(days=32)
+        user['username'] = 'usage_end_date'
+        user = User.objects.create_user(**user)
+        self.assertEqual(user.check_usage_limit(), False)
+
+    def test_user_usage_end_date_usage(self):
+        """User usage is 100% available """
+        user = usage_user.copy()
+        user['usage'] = 1
+        user['username'] = 'usage_end_date'
+        user = User.objects.create_user(**user)
+        self.assertEqual(user.check_usage_limit(), False)
+    
+    def test_user_usage_end_date_usage(self):
+        """User usage is 100% used"""
+        user = usage_user.copy()
+        user['username'] = 'usage_end_date'
+        user = User.objects.create_user(**user)
+        self.assertEqual(user.check_usage_limit(), True)

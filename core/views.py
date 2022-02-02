@@ -50,6 +50,14 @@ class ExchageRateView(APIView):
                 api_key=token.data.get('api_key', ''),
             ).user
 
+        if user.check_usage_limit():
+            return Response(
+                {
+                    'detail': 'You have reached your usage limit.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         dt = datetime.utcnow().replace(tzinfo=utc)
         last_rate = (
             ExchangeRateHistory.objects.filter()

@@ -1,5 +1,9 @@
+from datetime import datetime, timedelta
+
 from django.db import models
+from django.utils.timezone import utc
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -16,6 +20,34 @@ class User(AbstractUser):
 
     def percentage_usage(self):
         return self.usage
+
+    def reset_usage(self):
+        """ Reset the user's usage. """
+        today = datetime.utcnow().replace(tzinfo=utc).date()
+        self.usage_end_date = today + timedelta(days=30)
+        self.usage = 0
+        self.save(update_fields=['usage_end_date', 'usage'])
+
+    def check_usage_limit(self):
+        """ Check if the user has reached his usage limit. 
+        If the user has reached his usage limit, return True. """
+        today = datetime.utcnow().replace(tzinfo=utc).date()
+        if self.usage_end_date is None or self.usage is None:
+            self.reset_usage()
+            return False
+
+        elif today >= self.usage_end_date:
+            self.reset_usage()
+            return False
+        
+        elif (
+            self.usage_end_date  > today 
+            and settings.MAX_REQUEST_USAGE > self.usage
+        ):
+            return False
+        
+        else:
+            return True
 
 
 class ExchangeRateHistory(models.Model):
